@@ -1,0 +1,33 @@
+{
+	"description": "A magic bouncy NFT",
+	"external_url": "http://google.com",
+	"image": "https://www.humanesociety.org/sites/default/files/styles/1240x698/public/2020-07/kitten-510651.jpg",
+	"animation_url": "https://merunas.org/three/",
+	"name": "My Special Bouncy Cube",
+	"attributes": [
+		{
+			"trait_type": "Colors",
+			"value": "boring"
+		},
+		{
+			"trait_type": "Face",
+			"value": "wide pickle"
+		},
+		{
+			"trait_type": "Eyes",
+			"value": "thin ball"
+		},
+		{
+			"trait_type": "Hat",
+			"value": "none"
+		},
+		{
+			"trait_type": "Mouth",
+			"value": "smiling"
+		},
+		{
+			"trait_type": "Mustache",
+			"value": "none"
+		}
+	]
+}

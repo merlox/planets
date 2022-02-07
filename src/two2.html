@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Generative arts</title>
+	</head>
+	<body>
+		<script src="two.js"></script>
+		<script src="https://two.js.org/third-party/physics.js"></script>
+
+		<script>
+			const physics = new Physics()
+			const variance = 1
+			const mass = 10
+			let allParticles = []
+			let springs = []
+			let strongSprings = []
+
+			// Functions only
+			const createParticle = (x, y) => {
+				const rand = Math.random() * 20
+				const particle = physics.makeParticle(
+					mass, // Mass
+					x + rand, // x
+					y + rand // y
+				)
+				particle.position = new Two.Vector(
+					particle.position.x,
+					particle.position.y
+				)
+
+				const isNegative = Date.now() % 2 == 0
+				const origin = physics.makeParticle(
+					mass,
+					x + rand + Math.random() * 2 * (isNegative ? -1 : 1),
+					y + rand + Math.random() * 2 * (isNegative ? -1 : 1),
+				)
+				origin.makeFixed()
+				const s = physics.makeSpring(particle, origin, 1, 0, 0.0001)
+				const strong = physics.makeSpring(particle, origin, 100, 10, 10)
+				strong.on = false
+				springs.push(s)
+				strongSprings.push(strong)
+				allParticles.push(particle)
+				return particle
+			}
+
+			const createHead = () => {
+				const item = [
+					createParticle(0, -400).position,
+					createParticle(500, 0).position,
+					createParticle(200, 300).position,
+					createParticle(0, 400).position,
+					createParticle(-200, 300).position,
+					createParticle(-500, 0).position,
+				]
+				const path = new Two.Path(item, true, true)
+				path.linewidth = 10
+				path.stroke = '#444444'
+				path.fill = 'rgba(255, 255, 255, 1)'
+				return path
+			}
+
+			const createEar = (isRight, x, y) => {
+				const item = [
+					createParticle(0, 500).position,
+					createParticle(-20 * (isRight ? -1 : 1), 480).position,
+					createParticle(-50 * (isRight ? -1 : 1), 450).position,
+					createParticle(-70 * (isRight ? -1 : 1), 300).position,
+					createParticle(50 * (isRight ? -1 : 1), 200).position,
+					createParticle(150 * (isRight ? -1 : 1), 200).position,
+					createParticle(250 * (isRight ? -1 : 1), 250).position,
+					createParticle(200 * (isRight ? -1 : 1), 300).position,
+				]
+
+				const path = new Two.Path(item, true, true)
+				path.linewidth = 10
+				path.stroke = '#444444'
+				path.fill = '#1a1b1c'
+				path.translation.set(x, y)
+				return path
+			}
+
+			const createEye = (isRight, x, y) => {
+				const item = [
+					createParticle(0, -100).position,
+					createParticle(-130 * (isRight ? -1 : 1), 100).position,
+					createParticle(100 * (isRight ? -1 : 1), 100).position,
+				]
+				const path = new Two.Path(item, true, true)
+				path.linewidth = 10
+				path.stroke = '#444444'
+				path.fill = '#1a1b1c'
+				path.translation.set(x, y)
+				return path
+			}
+
+			const createPupil = (x, y) => {
+				const item = [
+					createParticle(0, -30).position,
+					createParticle(0, 80).position,
+				]
+				const path = new Two.Path(item, true, true)
+				path.linewidth = 10
+				path.stroke = '#444444'
+				path.fill = 'white'
+				path.translation.set(x, y)
+				return path
+			}
+
+			const createNose = (x, y) => {
+				const item = [
+					createParticle(0, 0).position,
+					createParticle(-70, -70).position,
+					createParticle(70, -70).position,
+				]
+				const path = new Two.Path(item, true, true)
+				path.linewidth = 10
+				path.stroke = '#444444'
+				path.fill = '#1a1b1c'
+				path.translation.set(x, y)
+				return path
+			}
+
+			const createUpperMouth = (x, y) => {
+				const item = [
+					createParticle(-100, -100).position,
+					createParticle(-150, 0).position,
+					createParticle(0, 0).position,
+					createParticle(150, 0).position,
+					createParticle(100, -100).position,
+				]
+				const path = new Two.Path(item, false, true)
+				path.linewidth = 10
+				path.stroke = '#444444'
+				path.fill = 'rgb(255, 255, 255)'
+				path.translation.set(x, y)
+				return path
+			}
+
+			const createLowerMouth = (x, y) => {
+				const item = [
+					createParticle(-100, 0).position,
+					createParticle(0, 0).position,
+					createParticle(100, 0).position,
+					createParticle(0, 50).position,
+				]
+				const path = new Two.Path(item, true, true)
+				path.linewidth = 10
+				path.stroke = '#444444'
+				path.fill = 'rgb(255, 255, 255)'
+				path.translation.set(x, y)
+				return path
+			}
+
+			const calculateScale = () => {
+				const smallest = window.innerWidth > window.innerHeight ? window.innerHeight : window.innerWidth * 0.9
+				let newScale = smallest / 1000
+				if (newScale >= 0.9) newScale = 0.8
+				return newScale
+			}
+		</script>
+
+		<script>
+			let eyes = []
+			let eyesClone = []
+			let pupils = []
+			let pupilsClone = []
+			let ears = []
+			let earsClone = []
+			let heads = []
+			let headsClone = []
+			let lowerMouths = []
+			let lowerMouthsClone = []
+			let upperMouths = []
+			let upperMouthsClone = []
+			let noses = []
+			let nosesClone = []
+			window.addEventListener('mousemove', e => {
+				pupils.forEach((pupil, i) => {
+					const force = 0.1
+					pupil.translation.set(
+						((e.clientX) - (window.innerWidth / 2)) * force + pupilsClone[i].translation.x,
+						((e.clientY) - (window.innerHeight / 2)) * force + pupilsClone[i].translation.y,
+					)
+				})
+				eyes.forEach((item, i) => {
+					const force = 0.045
+					item.translation.set(
+						((e.clientX) - (window.innerWidth / 2)) * force + eyesClone[i].translation.x,
+						((e.clientY) - (window.innerHeight / 2)) * force + eyesClone[i].translation.y,
+					)
+				})
+				ears.forEach((item, i) => {
+					const force = 0.03
+					item.translation.set(
+						((e.clientX) - (window.innerWidth / 2)) * force + earsClone[i].translation.x,
+						((e.clientY) - (window.innerHeight / 2)) * force + earsClone[i].translation.y,
+					)
+				})
+				lowerMouths.forEach((item, i) => {
+					const force = 0.07
+					item.translation.set(
+						((e.clientX) - (window.innerWidth / 2)) * force + lowerMouthsClone[i].translation.x,
+						((e.clientY) - (window.innerHeight / 2)) * force + lowerMouthsClone[i].translation.y,
+					)
+				})
+				upperMouths.forEach((item, i) => {
+					const force = 0.08
+					item.translation.set(
+						((e.clientX) - (window.innerWidth / 2)) * force + upperMouthsClone[i].translation.x,
+						((e.clientY) - (window.innerHeight / 2)) * force + upperMouthsClone[i].translation.y,
+					)
+				})
+				heads.forEach((item, i) => {
+					const force = 0.02
+					item.translation.set(
+						((e.clientX) - (window.innerWidth / 2)) * force + headsClone[i].translation.x,
+						((e.clientY) - (window.innerHeight / 2)) * force + headsClone[i].translation.y,
+					)
+				})
+				noses.forEach((item, i) => {
+					const force = 0.09
+					item.translation.set(
+						((e.clientX) - (window.innerWidth / 2)) * force + nosesClone[i].translation.x,
+						((e.clientY) - (window.innerHeight / 2)) * force + nosesClone[i].translation.y,
+					)
+				})
+			})
+
+			window.addEventListener('click', () => {
+				for (let i = 0; i < springs.length; i++) {
+					springs[i].constant = 10
+					springs[i].damping = 0.1
+					springs[i].length = 10
+				}
+
+				setTimeout(() => {
+					for (let i = 0; i < springs.length; i++) {
+						springs[i].constant = 10
+						springs[i].damping = 100
+						springs[i].length = 0.001
+						springs[i].damping = 0
+					}
+				}, 1e3)
+			})
+
+			const two = new Two({
+				fullscreen: true,
+			}).appendTo(document.body)
+			const group = two.makeGroup()
+
+			pupils = [createPupil(-150, 0), createPupil(-150, 0), createPupil(150, 0), createPupil(150, 0)] // Clone properly
+			pupilsClone = [createPupil(-150, 0), createPupil(-150, 0), createPupil(150, 0), createPupil(150, 0)] // Clone properly
+			eyes = [createEye(false, -150, 0), createEye(false, -150, 0), createEye(true, 150, 0), createEye(true, 150, 0)]
+			eyesClone = [createEye(false, -150, 0), createEye(false, -150, 0), createEye(true, 150, 0), createEye(true, 150, 0)]
+			ears = [createEar(false, -400, -600), createEar(false, -400, -600), createEar(true, 400, -600), createEar(true, 400, -600)]
+			earsClone = [createEar(false, -400, -600), createEar(false, -400, -600), createEar(true, 400, -600), createEar(true, 400, -600)]
+			heads = [createHead(), createHead()]
+			headsClone = [createHead(), createHead()]
+			upperMouths = [createUpperMouth(0, 300)]
+			upperMouthsClone = [createUpperMouth(0, 300)]
+			lowerMouths = [createLowerMouth(0, 300)]
+			lowerMouthsClone = [createLowerMouth(0, 300)]
+			noses = [createNose(0, 300), createNose(0, 300)]
+			nosesClone = [createNose(0, 300), createNose(0, 300)]
+			group.add(ears[0])
+			group.add(ears[1])
+			group.add(ears[2])
+			group.add(ears[3])
+			group.add(heads[0])
+			group.add(heads[1])
+			group.add(eyes[0])
+			group.add(eyes[1])
+			group.add(pupils[0])
+			group.add(pupils[1])
+			group.add(eyes[2])
+			group.add(eyes[3])
+			group.add(pupils[2])
+			group.add(pupils[3])
+			group.add(lowerMouths[0])
+			group.add(upperMouths[0]) // Upper mouth overflows lower mouth
+			group.add(noses[0])
+			group.add(noses[1])
+
+			// Center the item
+			group.translation.set(window.innerWidth / 2, window.innerHeight / 2)
+			group.scale = calculateScale()
+
+			two
+				.bind('resize', () => {
+					group.translation.set(window.innerWidth / 2, window.innerHeight / 2)
+					group.scale = calculateScale()
+				})
+				.bind('update', () => {
+					physics.update()
+				})
+				.play()
+		</script>
+	</body>
+</html>
