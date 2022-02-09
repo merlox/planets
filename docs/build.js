@@ -66745,7 +66745,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-var scene, camera, renderer;
+var scene, camera, renderer, planet, planet2;
 var LIGHT_FORCE = 2;
 var loader = new three_examples_jsm_loaders_GLTFLoader_js__WEBPACK_IMPORTED_MODULE_1__["GLTFLoader"](); // Setup
 
@@ -66764,20 +66764,33 @@ directionalLight.position.set(0, 20, 0);
 directionalLight.castShadow = true;
 scene.add(directionalLight); // To be able to rotate and zoom the planet
 
-new three_examples_jsm_controls_OrbitControls_js__WEBPACK_IMPORTED_MODULE_2__["OrbitControls"](camera, renderer.domElement); // const light = new THREE.PointLight(0xc4c4c4, LIGHT_FORCE)
-// light.position.set(0, 300, 500)
-// scene.add(light)
-// const light2 = new THREE.PointLight(0xc4c4c4, LIGHT_FORCE)
-// light.position.set(500, 100, 0)
-// scene.add(light2)
-// const light3 = new THREE.PointLight(0xc4c4c4, LIGHT_FORCE)
-// light.position.set(0, 100, -500)
-// scene.add(light3)
-// const light4 = new THREE.PointLight(0xc4c4c4, LIGHT_FORCE)
-// light.position.set(-500, 300, 0)
-// scene.add(light4)
+var orbit = new three_examples_jsm_controls_OrbitControls_js__WEBPACK_IMPORTED_MODULE_2__["OrbitControls"](camera, renderer.domElement);
+orbit.minZoom = 100.0;
+orbit.maxZoom = 110.0;
+orbit.zoomSpeed = 0.5;
+var textureLoader = new three__WEBPACK_IMPORTED_MODULE_0__["TextureLoader"]();
+var geometry = new three__WEBPACK_IMPORTED_MODULE_0__["SphereBufferGeometry"](8.5, 20, 20);
+var sphere = new three__WEBPACK_IMPORTED_MODULE_0__["Mesh"](geometry, new three__WEBPACK_IMPORTED_MODULE_0__["MeshStandardMaterial"]({
+  map: textureLoader.load('./assets/Water_002_COLOR.jpg'),
+  normalMap: textureLoader.load('./assets/Water_002_NORM.jpg'),
+  displacementMap: textureLoader.load('./assets/Water_002_DISP.png'),
+  displacementScale: 0.03,
+  roughnessMap: textureLoader.load('./assets/Water_002_ROUGH.jpg'),
+  roughness: 0,
+  aoMap: textureLoader.load('./assets/Water_002_OCC.jpg')
+}));
+sphere.receiveShadow = true;
+sphere.castShadow = true; // sphere.rotation.x = -Math.PI / 4
 
+scene.add(sphere);
+var geometryPositionCount = geometry.attributes.position.count;
+var positionClone = JSON.parse(JSON.stringify(geometry.attributes.position.array));
+var normalsClone = JSON.parse(JSON.stringify(geometry.attributes.normal.array));
+var damping = 0.2;
 loader.load('assets/planet.glb', function (glb) {
+  planet = glb.scene.children[0];
+  planet2 = glb.scene.children[1];
+  planet2.visible = false;
   scene.add(glb.scene);
 }, undefined, function (err) {
   console.log('Error', err);
@@ -66788,7 +66801,29 @@ camera.lookAt(0, 0, 0);
 var toTheRight = true;
 
 var animate = function animate() {
-  requestAnimationFrame(animate); // Inside here is where you update the positions
+  requestAnimationFrame(animate);
+  var now = Date.now() / 200; // Iterate all vertices of the water sphere
+
+  for (var i = 0; i < geometryPositionCount; i++) {
+    // Use UV to calculate waves
+    var uX = geometry.attributes.uv.getX(i) * Math.PI * 16;
+    var uY = geometry.attributes.uv.getY(i) * Math.PI * 16; // Calculate current vertex height
+
+    var xAngle = uX + now;
+    var xSin = Math.sin(xAngle) * damping;
+    var yAngle = uY + now;
+    var yCos = Math.cos(yAngle) * damping; // Indices
+
+    var iX = i * 3;
+    var iY = i * 3 + 1;
+    var iZ = i * 3 + 2;
+    geometry.attributes.position.setX(i, positionClone[iX] + normalsClone[iX] * (xSin - yCos));
+    geometry.attributes.position.setY(i, positionClone[iY] + normalsClone[iY] * (xSin - yCos));
+    geometry.attributes.position.setZ(i, positionClone[iZ] + normalsClone[iZ] * (xSin - yCos));
+    geometry.computeVertexNormals();
+    geometry.attributes.position.needsUpdate = true;
+  } // Inside here is where you update the positions
+
 
   if (toTheRight) {
     directionalLight.position.x = directionalLight.position.x + .1;
@@ -66804,6 +66839,12 @@ var animate = function animate() {
     toTheRight = true;
   }
 
+  if (planet) {
+    planet.rotation.y += 0.004;
+    sphere.rotation.y += 0.004;
+  }
+
+  if (planet2) planet2.rotation.y += 0.004;
   renderer.render(scene, camera);
 };
 
