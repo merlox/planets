@@ -66746,6 +66746,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 var scene, camera, renderer, planet, planet2;
+var isRotationStopped = false;
 var LIGHT_FORCE = 2;
 var loader = new three_examples_jsm_loaders_GLTFLoader_js__WEBPACK_IMPORTED_MODULE_1__["GLTFLoader"](); // Setup
 
@@ -66756,20 +66757,24 @@ renderer = new three__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderer"]({
   antialias: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
-var hlight = new three__WEBPACK_IMPORTED_MODULE_0__["AmbientLight"](0x404040, LIGHT_FORCE); // soft white light
+var hlight = new three__WEBPACK_IMPORTED_MODULE_0__["AmbientLight"](0x404040, LIGHT_FORCE * .1); // soft white light
 
 scene.add(hlight);
 var directionalLight = new three__WEBPACK_IMPORTED_MODULE_0__["DirectionalLight"](0xffffff, LIGHT_FORCE);
 directionalLight.position.set(0, 20, 0);
 directionalLight.castShadow = true;
-scene.add(directionalLight); // To be able to rotate and zoom the planet
+scene.add(directionalLight);
+var directionalLight2 = new three__WEBPACK_IMPORTED_MODULE_0__["DirectionalLight"](0xffffff, LIGHT_FORCE / 2);
+directionalLight2.position.set(0, -20, -10);
+directionalLight2.castShadow = true;
+scene.add(directionalLight2); // To be able to rotate and zoom the planet
 
 var orbit = new three_examples_jsm_controls_OrbitControls_js__WEBPACK_IMPORTED_MODULE_2__["OrbitControls"](camera, renderer.domElement);
 orbit.minZoom = 100.0;
 orbit.maxZoom = 110.0;
 orbit.zoomSpeed = 0.5;
 var textureLoader = new three__WEBPACK_IMPORTED_MODULE_0__["TextureLoader"]();
-var geometry = new three__WEBPACK_IMPORTED_MODULE_0__["SphereBufferGeometry"](8.5, 20, 20);
+var geometry = new three__WEBPACK_IMPORTED_MODULE_0__["SphereBufferGeometry"](1.14, 200, 200);
 var sphere = new three__WEBPACK_IMPORTED_MODULE_0__["Mesh"](geometry, new three__WEBPACK_IMPORTED_MODULE_0__["MeshStandardMaterial"]({
   map: textureLoader.load('./assets/Water_002_COLOR.jpg'),
   normalMap: textureLoader.load('./assets/Water_002_NORM.jpg'),
@@ -66780,24 +66785,28 @@ var sphere = new three__WEBPACK_IMPORTED_MODULE_0__["Mesh"](geometry, new three_
   aoMap: textureLoader.load('./assets/Water_002_OCC.jpg')
 }));
 sphere.receiveShadow = true;
-sphere.castShadow = true; // sphere.rotation.x = -Math.PI / 4
+sphere.castShadow = true;
+sphere.visible = false; // sphere.rotation.x = -Math.PI / 4
 
 scene.add(sphere);
 var geometryPositionCount = geometry.attributes.position.count;
 var positionClone = JSON.parse(JSON.stringify(geometry.attributes.position.array));
 var normalsClone = JSON.parse(JSON.stringify(geometry.attributes.normal.array));
-var damping = 0.2;
-loader.load('assets/planet.glb', function (glb) {
+loader.load('assets/cristal-decimated-planet.glb', function (glb) {
   planet = glb.scene.children[0];
   planet2 = glb.scene.children[1];
-  planet2.visible = false;
   scene.add(glb.scene);
 }, undefined, function (err) {
   console.log('Error', err);
 });
 document.body.appendChild(renderer.domElement);
-camera.position.set(0, 0, 30);
+camera.position.set(0, 5, 5);
 camera.lookAt(0, 0, 0);
+document.addEventListener('keypress', function (e) {
+  if (e.key == ' ') {
+    isRotationStopped = !isRotationStopped;
+  }
+});
 var toTheRight = true;
 
 var animate = function animate() {
@@ -66807,7 +66816,8 @@ var animate = function animate() {
   for (var i = 0; i < geometryPositionCount; i++) {
     // Use UV to calculate waves
     var uX = geometry.attributes.uv.getX(i) * Math.PI * 16;
-    var uY = geometry.attributes.uv.getY(i) * Math.PI * 16; // Calculate current vertex height
+    var uY = geometry.attributes.uv.getY(i) * Math.PI * 16;
+    var damping = 0.01; // Calculate current vertex height
 
     var xAngle = uX + now;
     var xSin = Math.sin(xAngle) * damping;
@@ -66820,31 +66830,31 @@ var animate = function animate() {
     geometry.attributes.position.setX(i, positionClone[iX] + normalsClone[iX] * (xSin - yCos));
     geometry.attributes.position.setY(i, positionClone[iY] + normalsClone[iY] * (xSin - yCos));
     geometry.attributes.position.setZ(i, positionClone[iZ] + normalsClone[iZ] * (xSin - yCos));
-    geometry.computeVertexNormals();
-    geometry.attributes.position.needsUpdate = true;
-  } // Inside here is where you update the positions
-
-
-  if (toTheRight) {
-    directionalLight.position.x = directionalLight.position.x + .1;
-    directionalLight.position.y = directionalLight.position.y + .1;
-  } else {
-    directionalLight.position.x = directionalLight.position.x - .1;
-    directionalLight.position.y = directionalLight.position.y - .1;
   }
 
-  if (directionalLight.position.x >= 100) {
-    toTheRight = false;
-  } else if (directionalLight.position.x <= -100) {
-    toTheRight = true;
+  geometry.computeVertexNormals();
+  geometry.attributes.position.needsUpdate = true; // Inside here is where you update the positions
+
+  if (!isRotationStopped) {
+    if (toTheRight) {
+      directionalLight.position.x += .1;
+      directionalLight.position.y += .1;
+    } else {
+      directionalLight.position.x -= .1;
+      directionalLight.position.y -= .1;
+    }
+
+    if (directionalLight.position.x >= 5) {
+      toTheRight = false;
+    } else if (directionalLight.position.x <= -5) {
+      toTheRight = true;
+    }
+
+    if (planet) planet.rotation.z += 0.004;
+    if (sphere) sphere.rotation.z += 0.004;
+    if (planet2) planet2.rotation.y -= 0.004;
   }
 
-  if (planet) {
-    planet.rotation.y += 0.004;
-    sphere.rotation.y += 0.004;
-  }
-
-  if (planet2) planet2.rotation.y += 0.004;
   renderer.render(scene, camera);
 };
 

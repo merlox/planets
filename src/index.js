@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 let scene, camera, renderer, planet, planet2
+let isRotationStopped = false
 
 const LIGHT_FORCE = 2
 
@@ -15,12 +16,17 @@ camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight,
 renderer = new THREE.WebGLRenderer({antialias: true})
 renderer.setSize(window.innerWidth, window.innerHeight)
 
-const hlight = new THREE.AmbientLight(0x404040, LIGHT_FORCE)// soft white light
+const hlight = new THREE.AmbientLight(0x404040, LIGHT_FORCE * .1)// soft white light
 scene.add(hlight)
 const directionalLight = new THREE.DirectionalLight(0xffffff, LIGHT_FORCE)
 directionalLight.position.set(0, 20, 0)
 directionalLight.castShadow = true
 scene.add(directionalLight)
+
+const directionalLight2 = new THREE.DirectionalLight(0xffffff, LIGHT_FORCE / 2)
+directionalLight2.position.set(0, -20, -10)
+directionalLight2.castShadow = true
+scene.add(directionalLight2)
 
 // To be able to rotate and zoom the planet
 const orbit = new OrbitControls(camera, renderer.domElement)
@@ -29,7 +35,7 @@ orbit.maxZoom = 110.0
 orbit.zoomSpeed = 0.5
 
 const textureLoader = new THREE.TextureLoader()
-const geometry = new THREE.SphereBufferGeometry(8.5, 20, 20)
+const geometry = new THREE.SphereBufferGeometry(1.14, 200, 200)
 const sphere = new THREE.Mesh(geometry,
 	new THREE.MeshStandardMaterial({
 		map: textureLoader.load('./assets/Water_002_COLOR.jpg'),
@@ -40,26 +46,31 @@ const sphere = new THREE.Mesh(geometry,
 	}))
 sphere.receiveShadow = true
 sphere.castShadow = true
+sphere.visible = false
 // sphere.rotation.x = -Math.PI / 4
 scene.add(sphere)
 
 const geometryPositionCount = geometry.attributes.position.count
 const positionClone = JSON.parse(JSON.stringify(geometry.attributes.position.array))
 const normalsClone = JSON.parse(JSON.stringify(geometry.attributes.normal.array))
-const damping = 0.2
 
-loader.load('assets/planet.glb', glb => {
+loader.load('assets/cristal-decimated-planet.glb', glb => {
 	planet = glb.scene.children[0]
 	planet2 = glb.scene.children[1]
-	planet2.visible = false
     scene.add(glb.scene)
 }, undefined, err => {
     console.log('Error', err)
 })
 
 document.body.appendChild(renderer.domElement)
-camera.position.set(0, 0, 30)
+camera.position.set(0, 5, 5)
 camera.lookAt(0, 0, 0)
+
+document.addEventListener('keypress', e => {
+	if (e.key == ' ') {
+		isRotationStopped = !isRotationStopped
+	}
+})
 
 let toTheRight = true
 const animate = () => {
@@ -72,6 +83,7 @@ const animate = () => {
 		const uX = geometry.attributes.uv.getX(i) * Math.PI * 16
 		const uY = geometry.attributes.uv.getY(i) * Math.PI * 16
 
+		const damping = 0.01
 		// Calculate current vertex height
 		const xAngle = (uX + now)
 		const xSin = Math.sin(xAngle) * damping
@@ -87,29 +99,28 @@ const animate = () => {
 		geometry.attributes.position.setY(i, positionClone[iY] + normalsClone[iY] * (xSin - yCos))
 		geometry.attributes.position.setZ(i, positionClone[iZ] + normalsClone[iZ] * (xSin - yCos))
 
-		geometry.computeVertexNormals()
-		geometry.attributes.position.needsUpdate = true
 	}
+	geometry.computeVertexNormals()
+	geometry.attributes.position.needsUpdate = true
 
 	// Inside here is where you update the positions
-	if (toTheRight) {
-		directionalLight.position.x = directionalLight.position.x + .1
-		directionalLight.position.y = directionalLight.position.y + .1
-	} else {
-		directionalLight.position.x = directionalLight.position.x - .1
-		directionalLight.position.y = directionalLight.position.y - .1
+	if (!isRotationStopped) {
+		if (toTheRight) {
+			directionalLight.position.x += .1
+			directionalLight.position.y += .1
+		} else {
+			directionalLight.position.x -= .1
+			directionalLight.position.y -= .1
+		}
+		if (directionalLight.position.x >= 5) {
+			toTheRight = false
+		} else if (directionalLight.position.x <= -5) {
+			toTheRight = true
+		}
+		if (planet) planet.rotation.z += 0.004
+		if (sphere) sphere.rotation.z += 0.004
+		if (planet2) planet2.rotation.y -= 0.004
 	}
-	if (directionalLight.position.x >= 100) {
-		toTheRight = false
-	} else if (directionalLight.position.x <= -100) {
-		toTheRight = true
-	}
-
-	if (planet) {
-		planet.rotation.y += 0.004
-		sphere.rotation.y += 0.004
-	}
-	if (planet2) planet2.rotation.y += 0.004
 
 	renderer.render(scene, camera)
 }
