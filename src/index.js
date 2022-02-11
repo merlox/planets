@@ -2,10 +2,10 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
-let scene, camera, renderer, planet, planet2
+let scene, camera, renderer, planet, planet2, skybox
 let isRotationStopped = false
 
-const LIGHT_FORCE = 2
+const LIGHT_FORCE = 3
 
 const loader = new GLTFLoader()
 
@@ -23,7 +23,7 @@ directionalLight.position.set(0, 20, 0)
 directionalLight.castShadow = true
 scene.add(directionalLight)
 
-const directionalLight2 = new THREE.DirectionalLight(0xffffff, LIGHT_FORCE / 2)
+const directionalLight2 = new THREE.DirectionalLight(0xffffff, LIGHT_FORCE)
 directionalLight2.position.set(0, -20, -10)
 directionalLight2.castShadow = true
 scene.add(directionalLight2)
@@ -49,6 +49,17 @@ sphere.castShadow = true
 sphere.visible = false
 // sphere.rotation.x = -Math.PI / 4
 scene.add(sphere)
+const texturePositions = ['ft', 'bk', 'up', 'dn', 'rt', 'lf']
+
+const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100)
+const skyboxMaterialArray = texturePositions.map(pos => {
+	return new THREE.MeshBasicMaterial({
+		map: textureLoader.load(`./assets/corona_${pos}.png`),
+		side: THREE.BackSide,
+	})
+})
+skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterialArray)
+scene.add(skybox)
 
 const geometryPositionCount = geometry.attributes.position.count
 const positionClone = JSON.parse(JSON.stringify(geometry.attributes.position.array))
@@ -120,6 +131,7 @@ const animate = () => {
 		if (planet) planet.rotation.z += 0.004
 		if (sphere) sphere.rotation.z += 0.004
 		if (planet2) planet2.rotation.y -= 0.004
+		if (skybox) skybox.rotation.y -= 0.001
 	}
 
 	renderer.render(scene, camera)
