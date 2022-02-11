@@ -78,11 +78,20 @@ document.body.appendChild(renderer.domElement)
 camera.position.set(0, 7, 7)
 camera.lookAt(0, 0, 0)
 
+function onWindowResize() {
+	camera.aspect = window.innerWidth / window.innerHeight
+	camera.updateProjectionMatrix()
+	renderer.setSize(window.innerWidth, window.innerHeight)
+}
+
+// Pause rotation on spacebar
 document.addEventListener('keypress', e => {
 	if (e.key == ' ') {
 		isRotationStopped = !isRotationStopped
 	}
 })
+
+window.addEventListener('resize', onWindowResize, false)
 
 let toTheRight = true
 const animate = () => {
