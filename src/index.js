@@ -30,8 +30,9 @@ scene.add(directionalLight2)
 
 // To be able to rotate and zoom the planet
 const orbit = new OrbitControls(camera, renderer.domElement)
-orbit.minZoom = 100.0
-orbit.maxZoom = 110.0
+orbit.enabled = true // This is required for the min and max distance to work
+orbit.minDistance = 3
+orbit.maxDistance = 30
 orbit.zoomSpeed = 0.5
 
 const textureLoader = new THREE.TextureLoader()
@@ -74,7 +75,7 @@ loader.load('assets/cristal-decimated-planet.glb', glb => {
 })
 
 document.body.appendChild(renderer.domElement)
-camera.position.set(0, 5, 5)
+camera.position.set(0, 7, 7)
 camera.lookAt(0, 0, 0)
 
 document.addEventListener('keypress', e => {
